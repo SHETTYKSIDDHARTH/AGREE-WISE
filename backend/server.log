@@ -1,0 +1,51 @@
+🚀 Backend server starting on port 5001...
+🌐 API will be available at http://localhost:5001
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://127.0.0.1:5001
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 268-643-749
+127.0.0.1 - - [01/Feb/2026 16:11:30] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:11:36] "[31m[1mPOST /api/translate HTTP/1.1[0m" 401 -
+ * Detected change in '/Users/Siddharth.Shetty/Desktop/agreewise/backend/app.py', reloading
+🚀 Backend server starting on port 5001...
+🌐 API will be available at http://localhost:5001
+🔄 Translating to es...
+❌ Lingo.dev API error: 401
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 268-643-749
+127.0.0.1 - - [01/Feb/2026 16:12:22] "[31m[1mPOST /api/translate HTTP/1.1[0m" 400 -
+ * Detected change in '/Users/Siddharth.Shetty/Desktop/agreewise/backend/app.py', reloading
+🚀 Backend server starting on port 5001...
+🌐 API will be available at http://localhost:5001
+🔄 Translating to es...
+❌ Lingo.dev API error: 400
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 268-643-749
+127.0.0.1 - - [01/Feb/2026 16:14:00] "[31m[1mPOST /api/translate HTTP/1.1[0m" 400 -
+ * Detected change in '/Users/Siddharth.Shetty/Desktop/agreewise/backend/app.py', reloading
+🚀 Backend server starting on port 5001...
+🌐 API will be available at http://localhost:5001
+🔄 Translating to es...
+❌ Lingo.dev API error: 400
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 268-643-749
+127.0.0.1 - - [01/Feb/2026 16:14:27] "POST /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:15:39] "OPTIONS /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:15:53] "POST /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:16:09] "OPTIONS /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:16:19] "POST /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:17:01] "OPTIONS /api/translate HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 16:17:11] "POST /api/translate HTTP/1.1" 200 -
+/opt/homebrew/Cellar/python@3.14/3.14.2_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-8hgcmrpq'}
+  warnings.warn(
+/opt/homebrew/Cellar/python@3.14/3.14.2_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:396: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-z4pijtju'}
+  warnings.warn(
