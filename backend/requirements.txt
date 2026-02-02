@@ -2,3 +2,16 @@ flask==3.0.0
 flask-cors==4.0.0
 requests==2.31.0
 python-dotenv==1.0.0
+
+# Document Processing
+python-docx==1.1.0        # DOCX extraction
+pdfplumber==0.10.3        # PDF text extraction
+pdf2image==1.16.3         # Convert PDF to images for OCR
+easyocr==1.7.2            # OCR for images and scanned PDFs (fixed Pillow 12 compatibility)
+python-magic==0.4.27      # File type detection
+Pillow>=11.0.0            # Image processing (latest for Python 3.14 support)
+numpy>=1.26.0             # Required by EasyOCR
+
+# AI Analysis (for Phase 3)
+groq==1.0.0               # Groq API client (updated for Python 3.14 compatibility)
+gTTS==2.5.0               # Google Text-to-Speech for multilingual audio output (free, no API key)

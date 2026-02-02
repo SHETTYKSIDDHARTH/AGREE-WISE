@@ -1,8 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import requests
 import os
+import tempfile
 from dotenv import load_dotenv
+from document_processor import process_document
+from ai_analyzer import analyze_contract, get_analysis_summary
+from tts_generator import generate_audio, cleanup_audio_file
 
 # Load environment variables
 load_dotenv()
@@ -12,12 +17,229 @@ CORS(app)  # Enable CORS for frontend requests
 
 LINGO_DEV_API_KEY = os.getenv('LINGO_DEV_API_KEY')
 LINGO_DEV_API_URL = 'https://engine.lingo.dev/i18n'
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+
+# File upload configuration
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'png', 'jpg', 'jpeg', 'heic'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'ok', 'message': 'Backend is running'}), 200
+
+
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    """
+    Analyze uploaded document(s) - supports single or multiple files
+    Extract text using OCR or text extraction
+
+    Expected multipart/form-data:
+    - files[]: One or more document files (for multi-page contracts)
+    - document_language: Language code for OCR (default: 'en')
+    - explanation_language: Language for AI analysis output (default: 'en')
+    - extract_only: If true, only extract text without AI analysis (default: true for now)
+    """
+    try:
+        # Get language parameters
+        document_language = request.form.get('document_language', request.form.get('language', 'en'))  # Fallback to 'language' for backward compatibility
+        explanation_language = request.form.get('explanation_language', 'en')
+        extract_only = request.form.get('extract_only', 'true').lower() == 'true'
+
+        # Check for multiple files (new format)
+        files = request.files.getlist('files[]')
+
+        # Fallback to single file (backwards compatibility)
+        if not files:
+            single_file = request.files.get('file')
+            if single_file:
+                files = [single_file]
+
+        if not files or len(files) == 0:
+            return jsonify({'error': 'No files provided'}), 400
+
+        # Validate all files
+        for file in files:
+            if file.filename == '':
+                return jsonify({'error': 'One or more files have no name'}), 400
+            if not allowed_file(file.filename):
+                return jsonify({
+                    'error': f'File type not allowed: {file.filename}. Supported: {", ".join(ALLOWED_EXTENSIONS)}'
+                }), 400
+
+        print(f'📄 Analyzing {len(files)} file(s)')
+        print(f'📄 Document Language: {document_language}')
+        print(f'💬 Explanation Language: {explanation_language}')
+
+        # Process each file
+        all_pages = []
+        temp_paths = []
+
+        try:
+            for idx, file in enumerate(files, 1):
+                filename = secure_filename(file.filename)
+
+                # Save file temporarily
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1])
+                temp_path = temp_file.name
+                temp_paths.append(temp_path)
+
+                file.save(temp_path)
+                print(f'💾 Page {idx}/{len(files)}: {filename}')
+
+                # Process document
+                result = process_document(temp_path, document_language)
+
+                if not result['success']:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Failed to process page {idx} ({filename}): {result["error"]}'
+                    }), 500
+
+                # Store page result
+                all_pages.append({
+                    'page_number': idx,
+                    'filename': filename,
+                    'text': result['text'],
+                    'file_type': result['file_type'],
+                    'extraction_method': result['method'],
+                    'char_count': result['char_count']
+                })
+
+                print(f'✓ Page {idx} complete: {result["char_count"]} characters')
+
+            # Combine all text with page breaks
+            combined_text = '\n\n--- PAGE BREAK ---\n\n'.join(
+                page['text'] for page in all_pages
+            )
+
+            # Calculate total characters
+            total_chars = sum(page['char_count'] for page in all_pages)
+
+            # Build response
+            response_data = {
+                'success': True,
+                'extracted_text': combined_text,
+                'total_pages': len(all_pages),
+                'pages': all_pages,
+                'metadata': {
+                    'total_files': len(files),
+                    'total_char_count': total_chars,
+                    'document_language': document_language,
+                    'explanation_language': explanation_language
+                }
+            }
+
+            # Phase 3: AI Analysis + Translation
+            if not extract_only and GROQ_API_KEY:
+                print('🤖 Starting AI analysis...')
+
+                # Step 1: Analyze with Groq (in English)
+                ai_result = analyze_contract(combined_text)
+
+                if ai_result['success']:
+                    analysis_english = ai_result['analysis']
+                    print(f'✓ AI analysis complete (tokens: {ai_result.get("tokens_used", "N/A")})')
+
+                    # Step 2: Translate analysis to explanation_language (if not English)
+                    if explanation_language != 'en' and LINGO_DEV_API_KEY:
+                        print(f'🔄 Translating analysis to {explanation_language}...')
+
+                        try:
+                            # Prepare analysis for translation
+                            import uuid
+                            workflow_id = str(uuid.uuid4())
+
+                            translation_payload = {
+                                'params': {
+                                    'workflowId': workflow_id,
+                                    'fast': False  # Use quality mode for legal content
+                                },
+                                'locale': {
+                                    'source': 'en',
+                                    'target': explanation_language
+                                },
+                                'data': analysis_english
+                            }
+
+                            # Call Lingo.dev API
+                            translation_response = requests.post(
+                                LINGO_DEV_API_URL,
+                                json=translation_payload,
+                                headers={
+                                    'Content-Type': 'application/json; charset=utf-8',
+                                    'Authorization': f'Bearer {LINGO_DEV_API_KEY}'
+                                },
+                                timeout=60  # Longer timeout for translation
+                            )
+
+                            if translation_response.status_code == 200:
+                                analysis_translated = translation_response.json()
+                                print(f'✓ Translation to {explanation_language} complete')
+
+                                response_data['analysis'] = {
+                                    'english': analysis_english,
+                                    'translated': analysis_translated,
+                                    'language': explanation_language
+                                }
+                            else:
+                                print(f'⚠️  Translation failed: {translation_response.status_code}')
+                                # Fallback to English only
+                                response_data['analysis'] = {
+                                    'english': analysis_english,
+                                    'translated': None,
+                                    'language': 'en',
+                                    'translation_error': f'Translation failed: {translation_response.status_code}'
+                                }
+
+                        except Exception as e:
+                            print(f'⚠️  Translation error: {str(e)}')
+                            # Fallback to English only
+                            response_data['analysis'] = {
+                                'english': analysis_english,
+                                'translated': None,
+                                'language': 'en',
+                                'translation_error': str(e)
+                            }
+                    else:
+                        # No translation needed (English) or no Lingo.dev key
+                        response_data['analysis'] = {
+                            'english': analysis_english,
+                            'translated': None,
+                            'language': 'en'
+                        }
+
+                    # Add metadata
+                    response_data['analysis']['model_used'] = ai_result.get('model_used')
+                    response_data['analysis']['tokens_used'] = ai_result.get('tokens_used')
+
+                else:
+                    print(f'❌ AI analysis failed: {ai_result.get("error")}')
+                    response_data['analysis'] = {
+                        'success': False,
+                        'error': ai_result.get('error')
+                    }
+
+            print(f'✓ Analysis complete: {len(files)} page(s), {total_chars} total characters')
+            return jsonify(response_data), 200
+
+        finally:
+            # Clean up all temp files
+            for temp_path in temp_paths:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            print(f'🗑️  Cleaned up {len(temp_paths)} temp file(s)')
+
+    except Exception as e:
+        print(f'❌ Analysis error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/translate', methods=['POST'])
@@ -42,7 +264,14 @@ def translate():
         source_locale = data.get('sourceLocale', 'en')
         target_locale = data.get('targetLocale')
 
+        print(f'📝 Translation request received:')
+        print(f'   - Source locale: {source_locale}')
+        print(f'   - Target locale: {target_locale}')
+        print(f'   - Content type: {type(content)}')
+        print(f'   - Content keys: {list(content.keys()) if isinstance(content, dict) else "N/A"}')
+
         if not content or not target_locale:
+            print(f'❌ Validation failed: content={bool(content)}, target_locale={bool(target_locale)}')
             return jsonify({'error': 'Missing required fields: content and targetLocale'}), 400
 
         # Prepare payload for Lingo.dev API (matching SDK format)
@@ -81,8 +310,16 @@ def translate():
         )
 
         if response.status_code == 200:
-            translated_content = response.json()
+            translated_response = response.json()
             print(f'✓ Translation complete for {target_locale}')
+            print(f'   - Response type: {type(translated_response)}')
+            print(f'   - Response keys: {list(translated_response.keys()) if isinstance(translated_response, dict) else "N/A"}')
+
+            # Lingo.dev returns: { sourceLocale, targetLocale, data: {...actual translated content...} }
+            # Extract the 'data' field which contains the actual translated content
+            translated_content = translated_response.get('data', translated_response)
+            print(f'   - Translated content keys: {list(translated_content.keys()) if isinstance(translated_content, dict) else "N/A"}')
+
             return jsonify({
                 'success': True,
                 'translated': translated_content
@@ -102,6 +339,63 @@ def translate():
         return jsonify({'error': f'Request failed: {str(e)}'}), 500
     except Exception as e:
         print(f'❌ Translation error: {str(e)}')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/generate-audio', methods=['POST'])
+def generate_audio_endpoint():
+    """
+    Generate TTS audio from text using Edge TTS
+
+    Expected request body:
+    {
+        "text": "string",  // Text to convert to speech
+        "language": "en",  // Language code (default: 'en')
+        "rate": "+0%"      // Speech rate (optional, default: '+0%')
+    }
+
+    Returns: Audio file (MP3)
+    """
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        text = data.get('text')
+        language = data.get('language', 'en')
+        rate = data.get('rate', '+0%')
+
+        if not text:
+            return jsonify({'error': 'Missing required field: text'}), 400
+
+        print(f'🔊 Generating audio in {language}...')
+
+        # Generate audio
+        audio_path = generate_audio(text, language, rate)
+
+        if audio_path and os.path.exists(audio_path):
+            print(f'✓ Sending audio file: {os.path.getsize(audio_path)} bytes')
+
+            # Send file and clean up after
+            response = send_file(
+                audio_path,
+                mimetype='audio/mpeg',
+                as_attachment=True,
+                download_name=f'analysis_audio_{language}.mp3'
+            )
+
+            # Schedule cleanup after sending
+            @response.call_on_close
+            def cleanup():
+                cleanup_audio_file(audio_path)
+
+            return response
+        else:
+            return jsonify({'error': 'Failed to generate audio'}), 500
+
+    except Exception as e:
+        print(f'❌ Audio generation error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 

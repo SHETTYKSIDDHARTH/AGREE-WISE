@@ -21,7 +21,7 @@ const LANGUAGES = [
   { code: 'nl', name: 'Dutch', native: 'Nederlands', flag: '🇳🇱' },
 ];
 
-export default function LanguageSelector({ selected, onChange }) {
+export default function LanguageSelector({ selected, onChange, label, hint }) {
   const { t } = useUILanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,10 +41,15 @@ export default function LanguageSelector({ selected, onChange }) {
 
   return (
     <div className="w-full relative">
-      <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
-        <Globe className="w-4 h-4" />
-        {t('analysisLanguageLabel')}
-      </label>
+      <div className="mb-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-white">
+          <Globe className="w-4 h-4" />
+          {label}
+        </label>
+        {hint && (
+          <p className="text-xs text-gray-400 mt-1 ml-6">{hint}</p>
+        )}
+      </div>
 
       {/* Selected Language Display */}
       <button

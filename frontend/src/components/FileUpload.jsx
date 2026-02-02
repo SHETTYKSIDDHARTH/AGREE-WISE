@@ -16,10 +16,12 @@ export default function FileUpload({ onFileSelect, selectedFile }) {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc'],
       'image/*': ['.png', '.jpg', '.jpeg', '.heic']
     },
     maxFiles: 1,
-    maxSize: 10485760
+    maxSize: 10485760 // 10MB
   });
 
   const removeFile = (e) => {
@@ -37,6 +39,10 @@ export default function FileUpload({ onFileSelect, selectedFile }) {
 
   const getFileIcon = (file) => {
     if (file.type === 'application/pdf') {
+      return <FileText className="w-6 h-6 text-white" />;
+    }
+    if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        file.type === 'application/msword') {
       return <FileText className="w-6 h-6 text-white" />;
     }
     return <ImageIcon className="w-6 h-6 text-white" />;

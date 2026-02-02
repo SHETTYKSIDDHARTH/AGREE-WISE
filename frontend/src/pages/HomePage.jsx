@@ -1,22 +1,90 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import FileUpload from '../components/FileUpload';
+import MultiFileUpload from '../components/MultiFileUpload';
 import LanguageSelector from '../components/LanguageSelector';
 import UILanguageSwitcher from '../components/UILanguageSwitcher';
 import { useUILanguage } from '../contexts/UILanguageContext';
-import { FileText, Zap, Globe, Shield, ArrowRight } from 'lucide-react';
+import { FileText, Zap, Globe, Shield, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function HomePage() {
   const { t } = useUILanguage();
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [file, setFile] = useState(null);
+  const [documentLanguage, setDocumentLanguage] = useState('en'); // Language of the contract
+  const [files, setFiles] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(0); // 0: idle, 1: extracting, 2: analyzing
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleAnalyze = () => {
-    if (file) {
-      navigate('/analyze', { 
-        state: { file, language: selectedLanguage } 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001';
+
+  const handleAnalyze = async () => {
+    if (!files || files.length === 0) return;
+
+    setAnalyzing(true);
+    setAnalysisStep(1); // Start with step 1
+    setError(null);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      // Add all files
+      files.forEach(file => {
+        formData.append('files[]', file);
       });
+
+      formData.append('document_language', documentLanguage);
+      formData.append('explanation_language', 'en'); // Always start with English
+      formData.append('extract_only', 'false'); // Enable AI analysis
+
+      console.log(`📤 Uploading ${files.length} file(s) for analysis...`);
+
+      // Show progress through backend processing
+      // Note: We can't track exact backend progress, so we show estimated steps
+      const progressTimer1 = setTimeout(() => setAnalysisStep(2), 3000);  // AI Analysis after ~3s
+
+      // Send to backend - this will wait for EVERYTHING to complete
+      const response = await fetch(`${BACKEND_URL}/api/analyze`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      // Clear timer once we get response
+      clearTimeout(progressTimer1);
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Analysis failed');
+      }
+
+      console.log('✓ Analysis complete:', result);
+
+      // Mark all steps as complete before navigating
+      setAnalysisStep(3); // All done!
+
+      // Small delay to show completion state
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Now navigate to results page with ALL the data
+      navigate('/analyze', {
+        state: {
+          files: files.map(f => f.name),
+          totalPages: result.total_pages,
+          documentLanguage: documentLanguage,
+          extractedText: result.extracted_text,
+          pages: result.pages,
+          metadata: result.metadata,
+          analysis: result.analysis // AI analysis results
+        }
+      });
+
+    } catch (err) {
+      console.error('❌ Analysis error:', err);
+      setError(err.message);
+    } finally {
+      setAnalyzing(false);
+      setAnalysisStep(0);
     }
   };
 
@@ -86,33 +154,106 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto">
           <div className="border border-white border-opacity-20 rounded-xl p-8 bg-white bg-opacity-5 backdrop-blur-sm">
             <div className="space-y-6">
-              {/* Language Selector */}
+              {/* Document Language Selector */}
               <LanguageSelector
-                selected={selectedLanguage}
-                onChange={setSelectedLanguage}
+                selected={documentLanguage}
+                onChange={setDocumentLanguage}
+                label={t('documentLanguageLabel')}
+                hint={t('documentLanguageHint')}
               />
 
-              {/* File Upload */}
-              <FileUpload
-                onFileSelect={setFile}
-                selectedFile={file}
+              {/* Multi-File Upload */}
+              <MultiFileUpload
+                onFilesSelect={setFiles}
+                selectedFiles={files}
               />
 
               {/* Analyze Button */}
               <button
                 onClick={handleAnalyze}
-                disabled={!file}
+                disabled={!files || files.length === 0 || analyzing}
                 className="w-full bg-white text-black py-4 px-6 rounded-lg font-medium text-base hover:bg-gray-800 disabled:cursor-not-allowed transition-all group flex items-center justify-center gap-2"
               >
-                {file ? (
+                {analyzing ? (
                   <>
-                    {t('analyzeButton')}
+                    <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    {files && files.length > 1 ? `Processing ${files.length} pages...` : 'Processing...'}
+                  </>
+                ) : files && files.length > 0 ? (
+                  <>
+                    {files.length === 1 ? t('analyzeButton') : `Analyze ${files.length} Pages`}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 ) : (
                   t('selectFileButton')
                 )}
               </button>
+
+              {/* Progress Steps */}
+              {analyzing && (
+                <div className="space-y-3 p-5 border border-white border-opacity-20 rounded-lg bg-white bg-opacity-5">
+                  <p className="text-xs text-gray-400 mb-2">Processing your document, please wait...</p>
+
+                  {/* Step 1: Extracting */}
+                  <div className="flex items-center gap-3">
+                    {analysisStep > 1 ? (
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${analysisStep >= 1 ? 'text-white' : 'text-gray-400'}`}>
+                        {analysisStep > 1 ? 'Text extracted successfully ✓' : `Extracting text from document${files && files.length > 1 ? 's' : ''}...`}
+                      </p>
+                      {analysisStep === 1 && (
+                        <div className="mt-1.5 h-1 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full animate-pulse" style={{ width: '60%' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Step 2: AI Analysis */}
+                  <div className="flex items-center gap-3">
+                    {analysisStep > 2 ? (
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    ) : analysisStep >= 2 ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-gray-600 rounded-full flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${analysisStep >= 2 ? 'text-white' : 'text-gray-400'}`}>
+                        {analysisStep > 2 ? 'AI analysis complete ✓' : analysisStep === 2 ? 'Analyzing contract with AI...' : 'Waiting for AI analysis...'}
+                      </p>
+                      {analysisStep === 2 && (
+                        <div className="mt-1.5 h-1 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                          <div className="h-full bg-white rounded-full animate-pulse" style={{ width: '70%' }} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Completion message */}
+                  {analysisStep === 3 && (
+                    <div className="mt-3 pt-3 border-t border-white border-opacity-10">
+                      <p className="text-sm text-green-400 text-center">
+                        ✓ All processing complete! Redirecting to results...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error Display */}
+              {error && (
+                <div className="p-4 bg-red-500 bg-opacity-10 border border-red-500 rounded-lg">
+                  <p className="text-sm text-red-400">
+                    <span className="font-semibold">Error: </span>
+                    {error}
+                  </p>
+                </div>
+              )}
 
               {/* Privacy Notice */}
               <div className="text-center pt-4 border-t border-white border-opacity-10">

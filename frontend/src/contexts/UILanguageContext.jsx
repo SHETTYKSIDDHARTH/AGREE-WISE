@@ -43,9 +43,12 @@ const baseTranslations = {
   feature3Desc: 'Automatically flag concerning clauses and understand consequences',
   
   // Form
-  analysisLanguageLabel: 'Analysis Language',
+  documentLanguageLabel: 'Document Language',
+  documentLanguageHint: 'Language of your contract text',
+  explanationLanguageLabel: 'Explanation Language',
+  explanationLanguageHint: 'Language you want the analysis in',
   uploadPrompt: 'Drop file or click to upload',
-  uploadHint: 'PDF, JPG, PNG up to 10MB',
+  uploadHint: 'PDF, DOCX, JPG, PNG up to 10MB',
   dragActive: 'Drop your file here',
   analyzeButton: 'Analyze Agreement',
   selectFileButton: 'Select a file to continue',
