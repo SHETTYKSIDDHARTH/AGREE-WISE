@@ -13,7 +13,12 @@ from tts_generator import generate_audio, cleanup_audio_file
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend requests
+# Enable CORS for frontend requests (Vercel + localhost)
+CORS(app, origins=[
+    'https://agree-w1se.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+])
 
 LINGO_DEV_API_KEY = os.getenv('LINGO_DEV_API_KEY')
 LINGO_DEV_API_URL = 'https://engine.lingo.dev/i18n'
