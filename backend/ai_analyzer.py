@@ -46,9 +46,9 @@ Analyze the contract and provide:
    - "impact": How it affects you directly (what you must do, what you get, what you can't do)
 
 3. **RISK ANALYSIS** (Be honest and specific)
-   - 🚩 RED FLAGS: Serious risks or unfair terms that could hurt you
-   - ⚠️ YELLOW FLAGS: Things to think carefully about or negotiate
-   - ✅ POSITIVE TERMS: Good parts that protect or benefit you
+   - RED FLAGS: Serious risks or unfair terms that could hurt you
+   - YELLOW FLAGS: Things to think carefully about or negotiate
+   - POSITIVE TERMS: Good parts that protect or benefit you
 
    For each item:
    - "issue" or "benefit": What it is (1 sentence)

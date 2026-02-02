@@ -399,6 +399,81 @@ def generate_audio_endpoint():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/generate-question-message', methods=['POST'])
+def generate_question_message():
+    """
+    Generate a formal WhatsApp/Email message for a question using Groq AI
+
+    Expected request body:
+    {
+        "question": "string",  // The question to format
+        "document_type": "string",  // Type of agreement
+        "language": "en"  // Language code (optional, default: 'en')
+    }
+
+    Returns: Formatted message ready to send
+    """
+    try:
+        from groq import Groq
+
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        question = data.get('question')
+        document_type = data.get('document_type', 'Agreement')
+        language = data.get('language', 'en')
+
+        if not question:
+            return jsonify({'success': False, 'error': 'Missing required field: question'}), 400
+
+        print(f'📧 Generating formal message for question in {language}...')
+
+        # Create Groq client
+        groq_client = Groq(api_key=GROQ_API_KEY)
+
+        # System prompt for formal message generation
+        prompt = f"""You are helping someone write a professional, polite message to ask a question about a {document_type} they're about to sign.
+
+Generate a complete, ready-to-send message (WhatsApp/Email format) that:
+1. Has a professional greeting
+2. Briefly mentions the context (reviewing the {document_type})
+3. Asks the specific question politely
+4. Requests clarification
+5. Ends with a professional closing
+
+The question to ask: "{question}"
+
+Language: {"English" if language == "en" else language}
+
+Make it formal but friendly, concise (3-4 sentences max), and ready to copy-paste.
+DO NOT include subject line or email headers - just the message body.
+"""
+
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=300
+        )
+
+        formatted_message = response.choices[0].message.content.strip()
+
+        print(f'✓ Formal message generated')
+
+        return jsonify({
+            'success': True,
+            'message': formatted_message
+        }), 200
+
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f'❌ Message generation error: {str(e)}')
+        print(f'   Stack trace: {error_trace}')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     print(f'🚀 Backend server starting on port {port}...')
