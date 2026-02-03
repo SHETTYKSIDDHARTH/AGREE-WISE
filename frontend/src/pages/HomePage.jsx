@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import MultiFileUpload from '../components/MultiFileUpload';
 import LanguageSelector from '../components/LanguageSelector';
 import UILanguageSwitcher from '../components/UILanguageSwitcher';
 import { useUILanguage } from '../contexts/UILanguageContext';
-import { FileText, Zap, Globe, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import { FileText, Zap, Globe, Shield, ArrowRight, CheckCircle, HelpCircle } from 'lucide-react';
 
 export default function HomePage() {
   const { t } = useUILanguage();
@@ -89,9 +89,28 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div
+      className="min-h-screen bg-black text-white"
+      style={{
+        backgroundImage: `
+          linear-gradient(
+            -90deg,
+            transparent calc(5em - 1px),
+            rgba(255, 255, 255, 0.2) calc(5em - 1px + 1px),
+            rgba(255, 255, 255, 0.2) 5em
+          ),
+          linear-gradient(
+            0deg,
+            transparent calc(5em - 1px),
+            rgba(255, 255, 255, 0.2) calc(5em - 1px + 1px),
+            rgba(255, 255, 255, 0.2) 5em
+          )
+        `,
+        backgroundSize: '5em 5em'
+      }}
+    >
       {/* Header */}
-      <header className="border-b border-white border-opacity-10">
+      <header className="border-b border-white border-opacity-10 bg-white bg-opacity-5 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-1.5 bg-white rounded">
@@ -99,9 +118,20 @@ export default function HomePage() {
             </div>
             <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
           </div>
-          
-          {/* UI Language Switcher */}
-          <UILanguageSwitcher />
+
+          <div className="flex items-center gap-4">
+            {/* How to Use Link */}
+            <Link
+              to="/how-to-use"
+              className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+              {t('howToUseButton')}
+            </Link>
+
+            {/* UI Language Switcher */}
+            <UILanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -119,7 +149,7 @@ export default function HomePage() {
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="p-6 border border-white border-opacity-10 rounded-lg hover:border-opacity-30 hover:bg-white hover:bg-opacity-5 transition-all">
+          <div className="p-6 border border-white border-opacity-10 rounded-lg bg-white bg-opacity-5 backdrop-blur-md hover:border-opacity-30 hover:bg-opacity-10 transition-all">
             <div className="w-10 h-10 bg-white rounded flex items-center justify-center mb-4">
               <Zap className="w-5 h-5 text-black" />
             </div>
@@ -129,7 +159,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-6 border border-white border-opacity-10 rounded-lg hover:border-opacity-30 hover:bg-white hover:bg-opacity-5 transition-all">
+          <div className="p-6 border border-white border-opacity-10 rounded-lg bg-white bg-opacity-5 backdrop-blur-md hover:border-opacity-30 hover:bg-opacity-10 transition-all">
             <div className="w-10 h-10 bg-white rounded flex items-center justify-center mb-4">
               <Globe className="w-5 h-5 text-black" />
             </div>
@@ -139,7 +169,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-6 border border-white border-opacity-10 rounded-lg hover:border-opacity-30 hover:bg-white hover:bg-opacity-5 transition-all">
+          <div className="p-6 border border-white border-opacity-10 rounded-lg bg-white bg-opacity-5 backdrop-blur-md hover:border-opacity-30 hover:bg-opacity-10 transition-all">
             <div className="w-10 h-10 bg-white rounded flex items-center justify-center mb-4">
               <Shield className="w-5 h-5 text-black" />
             </div>
@@ -264,43 +294,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
-        {/* Stats/Trust Bar */}
-        <div className="mt-20 pt-12 border-t border-white border-opacity-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold mb-1">{t('stat1')}</div>
-              <div className="text-sm text-gray-400">{t('stat1Label')}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold mb-1">{t('stat2')}</div>
-              <div className="text-sm text-gray-400">{t('stat2Label')}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold mb-1">{t('stat3')}</div>
-              <div className="text-sm text-gray-400">{t('stat3Label')}</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold mb-1">{t('stat4')}</div>
-              <div className="text-sm text-gray-400">{t('stat4Label')}</div>
-            </div>
-          </div>
-        </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white border-opacity-10 py-8 mt-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-400">
-              {t('footerBuilt')}
-            </p>
-            <p className="text-xs text-gray-500">
-              {t('footerDisclaimer')}
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

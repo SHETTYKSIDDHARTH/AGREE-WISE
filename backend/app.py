@@ -21,7 +21,6 @@ CORS(app, origins=[
 ])
 
 LINGO_DEV_API_KEY = os.getenv('LINGO_DEV_API_KEY')
-LINGO_DEV_API_URL = 'https://engine.lingo.dev/i18n'
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
 # File upload configuration
@@ -260,6 +259,9 @@ def translate():
     }
     """
     try:
+        import asyncio
+        from lingodotdev.engine import LingoDotDevEngine
+
         data = request.get_json()
 
         if not data:
@@ -279,69 +281,61 @@ def translate():
             print(f'❌ Validation failed: content={bool(content)}, target_locale={bool(target_locale)}')
             return jsonify({'error': 'Missing required fields: content and targetLocale'}), 400
 
-        # Prepare payload for Lingo.dev API (matching SDK format)
-        # Generate a simple workflow ID
-        import uuid
-        workflow_id = str(uuid.uuid4())
-
-        payload = {
-            'params': {
-                'workflowId': workflow_id,
-                'fast': data.get('fast', False)
-            },
-            'locale': {
-                'source': source_locale,
-                'target': target_locale
-            },
-            'data': content
-        }
-
-        # Only include reference and hints if they're provided
-        if data.get('reference'):
-            payload['reference'] = data.get('reference')
-        if data.get('hints'):
-            payload['hints'] = data.get('hints')
-
-        # Call Lingo.dev API with Bearer token authentication
-        print(f'🔄 Translating to {target_locale}...')
-        response = requests.post(
-            LINGO_DEV_API_URL,
-            json=payload,
-            headers={
-                'Content-Type': 'application/json; charset=utf-8',
-                'Authorization': f'Bearer {LINGO_DEV_API_KEY}'
-            },
-            timeout=30
-        )
-
-        if response.status_code == 200:
-            translated_response = response.json()
-            print(f'✓ Translation complete for {target_locale}')
-            print(f'   - Response type: {type(translated_response)}')
-            print(f'   - Response keys: {list(translated_response.keys()) if isinstance(translated_response, dict) else "N/A"}')
-
-            # Lingo.dev returns: { sourceLocale, targetLocale, data: {...actual translated content...} }
-            # Extract the 'data' field which contains the actual translated content
-            translated_content = translated_response.get('data', translated_response)
-            print(f'   - Translated content keys: {list(translated_content.keys()) if isinstance(translated_content, dict) else "N/A"}')
-
-            return jsonify({
-                'success': True,
-                'translated': translated_content
-            }), 200
-        else:
-            error_msg = f'Lingo.dev API error: {response.status_code}'
-            print(f'❌ {error_msg}')
+        # Check if Lingo.dev API key is configured
+        if not LINGO_DEV_API_KEY:
+            print('❌ LINGO_DEV_API_KEY not configured')
             return jsonify({
                 'success': False,
-                'error': error_msg,
-                'details': response.text
-            }), response.status_code
+                'error': 'Translation service not configured. Please add LINGO_DEV_API_KEY to .env file.'
+            }), 503
 
-    except requests.exceptions.Timeout:
-        return jsonify({'error': 'Translation request timed out'}), 504
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Request failed: {str(e)}'}), 500
+        # Use Lingo.dev Python SDK for translation
+        print(f'🔄 Translating to {target_locale} using SDK...')
+
+        async def translate():
+            result = await LingoDotDevEngine.quick_translate(
+                content,
+                api_key=LINGO_DEV_API_KEY,
+                source_locale=source_locale,
+                target_locale=target_locale,
+                fast=data.get('fast', True)  # Use fast mode by default
+            )
+            return result
+
+        # Run async function in sync context
+        translated_content = asyncio.run(translate())
+
+        print(f'✓ Translation complete for {target_locale}')
+        print(f'   - Translated content type: {type(translated_content)}')
+        if isinstance(translated_content, dict):
+            print(f'   - Translated content keys: {list(translated_content.keys())}')
+
+        return jsonify({
+            'success': True,
+            'translated': {
+                'sourceLocale': source_locale,
+                'targetLocale': target_locale,
+                'data': translated_content
+            }
+        }), 200
+
+    except ValueError as e:
+        error_msg = f'Invalid parameters: {str(e)}'
+        print(f'❌ {error_msg}')
+        return jsonify({
+            'success': False,
+            'error': error_msg
+        }), 400
+    except RuntimeError as e:
+        error_msg = f'Translation service error: {str(e)}'
+        print(f'❌ {error_msg}')
+        # Check if it's an authentication error
+        if 'auth' in str(e).lower() or '401' in str(e):
+            error_msg = 'Invalid or expired LINGO_DEV_API_KEY. Please check your API key at https://lingo.dev'
+        return jsonify({
+            'success': False,
+            'error': error_msg
+        }), 500
     except Exception as e:
         print(f'❌ Translation error: {str(e)}')
         return jsonify({'error': str(e)}), 500

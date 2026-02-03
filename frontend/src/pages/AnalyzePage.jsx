@@ -16,6 +16,7 @@ export default function AnalyzePage() {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [translating, setTranslating] = useState(false);
   const [translatedAnalysis, setTranslatedAnalysis] = useState(null);
+  const [translatedHeadings, setTranslatedHeadings] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
   // State for audio playback
@@ -40,72 +41,29 @@ export default function AnalyzePage() {
     }));
   };
 
-  // Section heading translations
-  const sectionHeadings = {
-    obligations: {
-      en: 'What You Must Do',
-      hi: 'आपको क्या करना होगा',
-      es: 'Lo que debes hacer',
-      fr: 'Ce que vous devez faire',
-      de: 'Was Sie tun müssen',
-      pt: 'O que você deve fazer',
-      zh: '您必须做什么',
-      ja: 'あなたがしなければならないこと',
-      ar: 'ما يجب عليك فعله',
-      ru: 'Что вы должны сделать',
-    },
-    rights: {
-      en: 'What You Get',
-      hi: 'आपको क्या मिलता है',
-      es: 'Lo que obtienes',
-      fr: 'Ce que vous obtenez',
-      de: 'Was Sie bekommen',
-      pt: 'O que você recebe',
-      zh: '您将获得什么',
-      ja: 'あなたが得るもの',
-      ar: 'ما تحصل عليه',
-      ru: 'Что вы получаете',
-    },
-    risks: {
-      en: 'Important Warnings',
-      hi: 'महत्वपूर्ण चेतावनियाँ',
-      es: 'Advertencias importantes',
-      fr: 'Avertissements importants',
-      de: 'Wichtige Warnungen',
-      pt: 'Avisos importantes',
-      zh: '重要警告',
-      ja: '重要な警告',
-      ar: 'تحذيرات هامة',
-      ru: 'Важные предупреждения',
-    },
-    clauses: {
-      en: 'Important Terms',
-      hi: 'महत्वपूर्ण शर्तें',
-      es: 'Términos importantes',
-      fr: 'Termes importants',
-      de: 'Wichtige Bedingungen',
-      pt: 'Termos importantes',
-      zh: '重要条款',
-      ja: '重要な用語',
-      ar: 'شروط مهمة',
-      ru: 'Важные условия',
-    },
-    questions: {
-      en: 'Questions to Ask Before Signing',
-      hi: 'हस्ताक्षर करने से पहले पूछने के सवाल',
-      es: 'Preguntas para hacer antes de firmar',
-      fr: 'Questions à poser avant de signer',
-      de: 'Fragen vor der Unterzeichnung',
-      pt: 'Perguntas a fazer antes de assinar',
-      zh: '签署前要问的问题',
-      ja: '署名前に尋ねる質問',
-      ar: 'أسئلة يجب طرحها قبل التوقيع',
-      ru: 'Вопросы перед подписанием',
-    }
-  };
-
+  // Get section headings - use translated headings based on explanation language
   const getHeading = (section) => {
-    return sectionHeadings[section]?.[selectedLanguage] || sectionHeadings[section]?.en || '';
+    // If we have translated headings, use them (based on explanation language)
+    if (translatedHeadings) {
+      const headingMap = {
+        obligations: translatedHeadings.whatYouMustDo,
+        rights: translatedHeadings.whatYouGet,
+        risks: translatedHeadings.importantWarnings,
+        clauses: translatedHeadings.importantTerms,
+        questions: translatedHeadings.questionsToAsk
+      };
+      return headingMap[section] || section;
+    }
+
+    // Otherwise use UI language translations (for English or fallback)
+    const headingMap = {
+      obligations: 'whatYouMustDo',
+      rights: 'whatYouGet',
+      risks: 'importantWarnings',
+      clauses: 'importantTerms',
+      questions: 'questionsToAsk'
+    };
+    return t(headingMap[section] || section);
   };
 
   // State for copying individual questions
@@ -300,6 +258,7 @@ export default function AnalyzePage() {
     // If English is selected, use the original English analysis
     if (newLanguage === 'en') {
       setTranslatedAnalysis(null);
+      setTranslatedHeadings(null);
       return;
     }
 
@@ -318,7 +277,8 @@ export default function AnalyzePage() {
         targetLocale: newLanguage,
       });
 
-      const response = await fetch(`${BACKEND_URL}/api/translate`, {
+      // Translate the analysis content
+      const analysisResponse = await fetch(`${BACKEND_URL}/api/translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,13 +290,73 @@ export default function AnalyzePage() {
         }),
       });
 
-      const result = await response.json();
+      const analysisResult = await analysisResponse.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Translation failed');
+      if (!analysisResponse.ok || !analysisResult.success) {
+        throw new Error(analysisResult.error || 'Translation failed');
       }
 
-      setTranslatedAnalysis(result.translated);
+      // Translate all UI text elements on the page
+      const headingsToTranslate = {
+        // Section headings
+        summary: 'Summary',
+        whatYouMustDo: 'What You Must Do',
+        whatYouGet: 'What You Get',
+        importantWarnings: 'Important Warnings',
+        importantTerms: 'Important Terms',
+        questionsToAsk: 'Questions to Ask Before Signing',
+
+        // Risk levels
+        lowRisk: 'LOW RISK',
+        mediumRisk: 'MEDIUM RISK',
+        highRisk: 'HIGH RISK',
+
+        // Risk messages
+        fairBalance: 'This contract looks fair and balanced.',
+        someConcerns: 'Some concerns found. Read the warnings below carefully.',
+        cautionMessage: 'CAUTION: Multiple serious concerns found. Review carefully before signing.',
+
+        // Color guide
+        colorGuide: 'Color Guide',
+        redSerious: 'Red = Serious Risk',
+        yellowModerate: 'Yellow = Moderate Risk',
+        greenFavorable: 'Green = Favorable',
+        expandSections: 'Expand sections below for detailed information',
+
+        // Flag labels
+        redFlag: 'Red Flag',
+        redFlags: 'Red Flags',
+        yellowFlag: 'Yellow Flag',
+        yellowFlags: 'Yellow Flags',
+        positiveTerm: 'Positive Term',
+        positiveTerms: 'Positive Terms',
+
+        // Other text
+        copyMessageHint: 'Click "Copy Message" to generate a professional WhatsApp/Email ready message',
+        showingTopQuestions: 'Showing top 3 of {count} questions',
+      };
+
+      const headingsResponse = await fetch(`${BACKEND_URL}/api/translate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: headingsToTranslate,
+          sourceLocale: 'en',
+          targetLocale: newLanguage,
+        }),
+      });
+
+      const headingsResult = await headingsResponse.json();
+
+      if (!headingsResponse.ok || !headingsResult.success) {
+        throw new Error(headingsResult.error || 'Headings translation failed');
+      }
+
+      // Extract the translated data from the responses
+      setTranslatedAnalysis(analysisResult.translated.data);
+      setTranslatedHeadings(headingsResult.translated.data);
     } catch (err) {
       console.error('Translation error:', err);
       setTranslationError(err.message);
@@ -362,7 +382,7 @@ export default function AnalyzePage() {
             className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t('backToHome')}
           </button>
         </div>
       </header>
@@ -373,11 +393,11 @@ export default function AnalyzePage() {
         <div className="mb-8 flex items-center gap-3">
           <CheckCircle className="w-8 h-8 text-green-400" />
           <div>
-            <h2 className="text-3xl font-bold mb-1">Analysis Complete</h2>
+            <h2 className="text-3xl font-bold mb-1">{t('analysisComplete')}</h2>
             <p className="text-gray-400">
               {totalPages > 1
-                ? `Successfully analyzed ${totalPages} pages`
-                : 'Successfully analyzed your document'
+                ? t('successAnalyzedPages').replace('{pages}', totalPages)
+                : t('successAnalyzed')
               }
             </p>
           </div>
@@ -388,18 +408,18 @@ export default function AnalyzePage() {
           <LanguageSelector
             selected={selectedLanguage}
             onChange={handleLanguageChange}
-            label="Explanation Language"
-            hint="Choose the language for the analysis summary"
+            label={t('explanationLanguageLabel')}
+            hint={t('explanationLanguageHint')}
           />
           {translating && (
             <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Translating to {selectedLanguage}...
+              {t('translatingTo').replace('{language}', selectedLanguage)}
             </div>
           )}
           {translationError && (
             <div className="mt-2 text-sm text-red-400">
-              Translation failed: {translationError}
+              {t('translationFailed')}: {translationError}
             </div>
           )}
         </div>
@@ -414,17 +434,17 @@ export default function AnalyzePage() {
             {generatingAudio ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Generating...</span>
+                <span>{t('generating')}</span>
               </>
             ) : isPlaying ? (
               <>
                 <VolumeX className="w-5 h-5" />
-                <span>Stop Audio</span>
+                <span>{t('stopAudio')}</span>
               </>
             ) : (
               <>
                 <Volume2 className="w-5 h-5" />
-                <span>Listen to Summary</span>
+                <span>{t('listenToSummary')}</span>
               </>
             )}
           </button>
@@ -460,33 +480,33 @@ export default function AnalyzePage() {
               const yellowFlags = risks.yellow_flags?.length || 0;
               const positiveTerms = risks.positive_terms?.length || 0;
 
-              let riskLevel = 'LOW';
+              let riskLevel = translatedHeadings ? translatedHeadings.lowRisk : t('lowRisk');
               let riskClasses = {
                 title: 'text-green-300',
                 message: 'text-green-200',
                 bg: 'bg-green-500',
                 border: 'border-green-400'
               };
-              let riskMessage = 'This contract looks fair and balanced.';
+              let riskMessage = translatedHeadings ? translatedHeadings.fairBalance : t('fairBalance');
 
               if (redFlags >= 3) {
-                riskLevel = 'HIGH';
+                riskLevel = translatedHeadings ? translatedHeadings.highRisk : t('highRisk');
                 riskClasses = {
                   title: 'text-red-300',
                   message: 'text-red-200',
                   bg: 'bg-red-500',
                   border: 'border-red-400'
                 };
-                riskMessage = 'CAUTION: Multiple serious concerns found. Review carefully before signing.';
+                riskMessage = translatedHeadings ? translatedHeadings.cautionMessage : t('cautionMessage');
               } else if (redFlags >= 1 || yellowFlags >= 3) {
-                riskLevel = 'MEDIUM';
+                riskLevel = translatedHeadings ? translatedHeadings.mediumRisk : t('mediumRisk');
                 riskClasses = {
                   title: 'text-yellow-300',
                   message: 'text-yellow-200',
                   bg: 'bg-yellow-500',
                   border: 'border-yellow-400'
                 };
-                riskMessage = 'Some concerns found. Read the warnings below carefully.';
+                riskMessage = translatedHeadings ? translatedHeadings.someConcerns : t('someConcerns');
               }
 
               return (
@@ -503,13 +523,28 @@ export default function AnalyzePage() {
                       <p className={`text-sm ${riskClasses.message} mb-3`}>{riskMessage}</p>
                       <div className="flex justify-center gap-4 text-xs">
                         {redFlags > 0 && (
-                          <span className="text-red-300">{redFlags} Red Flag{redFlags !== 1 ? 's' : ''}</span>
+                          <span className="text-red-300">
+                            {redFlags} {redFlags === 1
+                              ? (translatedHeadings ? translatedHeadings.redFlag : t('redFlags'))
+                              : (translatedHeadings ? translatedHeadings.redFlags : t('redFlagsPlural'))
+                            }
+                          </span>
                         )}
                         {yellowFlags > 0 && (
-                          <span className="text-yellow-300">{yellowFlags} Yellow Flag{yellowFlags !== 1 ? 's' : ''}</span>
+                          <span className="text-yellow-300">
+                            {yellowFlags} {yellowFlags === 1
+                              ? (translatedHeadings ? translatedHeadings.yellowFlag : t('yellowFlags'))
+                              : (translatedHeadings ? translatedHeadings.yellowFlags : t('yellowFlagsPlural'))
+                            }
+                          </span>
                         )}
                         {positiveTerms > 0 && (
-                          <span className="text-green-300">{positiveTerms} Positive Term{positiveTerms !== 1 ? 's' : ''}</span>
+                          <span className="text-green-300">
+                            {positiveTerms} {positiveTerms === 1
+                              ? (translatedHeadings ? translatedHeadings.positiveTerm : t('positiveTerms'))
+                              : (translatedHeadings ? translatedHeadings.positiveTerms : t('positiveTermsPlural'))
+                            }
+                          </span>
                         )}
                       </div>
                     </div>
@@ -517,17 +552,29 @@ export default function AnalyzePage() {
 
                   {/* Color Legend */}
                   <div className="mb-6 p-4 border border-white border-opacity-10 rounded-lg bg-white bg-opacity-5">
-                    <p className="text-xs text-gray-300 text-center mb-2 font-semibold">Color Guide</p>
+                    <p className="text-xs text-gray-300 text-center mb-2 font-semibold">
+                      {translatedHeadings ? translatedHeadings.colorGuide : t('colorGuide')}
+                    </p>
                     <div className="flex justify-center gap-6 text-xs">
-                      <span className="text-red-300">Red = Serious Risk</span>
-                      <span className="text-yellow-300">Yellow = Moderate Risk</span>
-                      <span className="text-green-300">Green = Favorable</span>
+                      <span className="text-red-300">
+                        {translatedHeadings ? translatedHeadings.redSerious : t('redSerious')}
+                      </span>
+                      <span className="text-yellow-300">
+                        {translatedHeadings ? translatedHeadings.yellowModerate : t('yellowModerate')}
+                      </span>
+                      <span className="text-green-300">
+                        {translatedHeadings ? translatedHeadings.greenFavorable : t('greenFavorable')}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-400 text-center mt-2">Expand sections below for detailed information</p>
+                    <p className="text-xs text-gray-400 text-center mt-2">
+                      {translatedHeadings ? translatedHeadings.expandSections : t('expandSections')}
+                    </p>
                   </div>
 
                   {/* Summary Heading */}
-                  <h3 className="text-xl font-semibold mb-6 text-center text-gray-300">Summary</h3>
+                  <h3 className="text-xl font-semibold mb-6 text-center text-gray-300">
+                    {translatedHeadings ? translatedHeadings.summary : t('summary')}
+                  </h3>
 
                   {/* All Information */}
                   <div className="space-y-6 text-base leading-relaxed">
@@ -681,7 +728,7 @@ export default function AnalyzePage() {
                         {expandedSections.questions && (
                           <div className="p-4 bg-blue-500 bg-opacity-5">
                             <div className="text-xs text-blue-200 mb-4">
-                              Click "Copy Message" to generate a professional WhatsApp/Email ready message
+                              {translatedHeadings ? translatedHeadings.copyMessageHint : t('copyMessageHint')}
                             </div>
                             <div className="space-y-4">
                               {currentAnalysis.questions_to_ask.slice(0, 3).map((question, index) => (
@@ -698,14 +745,14 @@ export default function AnalyzePage() {
                                     {copyingQuestion === index ? (
                                       <>
                                         <div className="w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />
-                                        <span className="text-sm">Generating...</span>
+                                        <span className="text-sm">{t('generating')}</span>
                                       </>
                                     ) : (
                                       <>
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                         </svg>
-                                        <span className="text-sm font-medium">Copy Message</span>
+                                        <span className="text-sm font-medium">{t('copyMessage')}</span>
                                       </>
                                     )}
                                   </button>
@@ -714,7 +761,10 @@ export default function AnalyzePage() {
                             </div>
                             {currentAnalysis.questions_to_ask.length > 3 && (
                               <div className="mt-3 text-xs text-gray-400 text-center">
-                                Showing top 3 of {currentAnalysis.questions_to_ask.length} questions
+                                {(translatedHeadings
+                                  ? translatedHeadings.showingTopQuestions
+                                  : t('showingTopQuestions')
+                                ).replace('{count}', currentAnalysis.questions_to_ask.length)}
                               </div>
                             )}
                           </div>
@@ -726,8 +776,8 @@ export default function AnalyzePage() {
                   {/* Language Indicator */}
                   <div className="text-center pt-6 mt-6 border-t border-white border-opacity-10">
                     <p className="text-xs text-gray-400">
-                      Explained in: <span className="text-white font-medium uppercase">{selectedLanguage}</span>
-                      {translatedAnalysis && ' (Translated)'}
+                      {t('explainedIn')}: <span className="text-white font-medium uppercase">{selectedLanguage}</span>
+                      {translatedAnalysis && ` (${t('translated')})`}
                     </p>
                   </div>
                 </div>
@@ -742,7 +792,7 @@ export default function AnalyzePage() {
             onClick={() => navigate('/')}
             className="flex-1 px-6 py-3 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            Analyze Another Document
+            {t('analyzeAnother')}
           </button>
         </div>
       </main>
