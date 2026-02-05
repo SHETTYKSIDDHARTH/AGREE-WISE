@@ -1,0 +1,19 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: agreewise-backend
+    runtime: python
+    region: oregon  # or choose: singapore, frankfurt, ohio
+    plan: free  # or: starter, standard, pro
+    branch: main
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GROQ_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: LINGO_DEV_API_KEY
+        sync: false  # Set this in Render dashboard
+    healthCheckPath: /health

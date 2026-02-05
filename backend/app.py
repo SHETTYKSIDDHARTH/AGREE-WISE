@@ -13,12 +13,20 @@ from tts_generator import generate_audio, cleanup_audio_file
 load_dotenv()
 
 app = Flask(__name__)
-# Enable CORS for frontend requests (Vercel + localhost)
-CORS(app, origins=[
-    'https://agree-w1se.vercel.app',
+
+# Configure CORS - allow frontend from environment variable or defaults
+FRONTEND_URL = os.getenv('FRONTEND_URL', '')
+allowed_origins = [
     'http://localhost:5173',
-    'http://localhost:3000'
-])
+    'http://localhost:3000',
+    'http://localhost:5174'
+]
+
+# Add custom frontend URL if provided
+if FRONTEND_URL:
+    allowed_origins.append(FRONTEND_URL)
+
+CORS(app, origins=allowed_origins, supports_credentials=True)
 
 LINGO_DEV_API_KEY = os.getenv('LINGO_DEV_API_KEY')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
@@ -475,6 +483,8 @@ DO NOT include subject line or email headers - just the message body.
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
+    debug_mode = os.getenv('FLASK_ENV', 'production') == 'development'
     print(f'🚀 Backend server starting on port {port}...')
+    print(f'🌐 Environment: {os.getenv("FLASK_ENV", "production")}')
     print(f'🌐 API will be available at http://localhost:{port}')
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
