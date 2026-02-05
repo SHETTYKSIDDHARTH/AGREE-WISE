@@ -26,7 +26,12 @@ allowed_origins = [
 if FRONTEND_URL:
     allowed_origins.append(FRONTEND_URL)
 
-CORS(app, origins=allowed_origins, supports_credentials=True)
+# Configure CORS with support for credentials and all HTTP methods
+CORS(app,
+     origins=allowed_origins,
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 LINGO_DEV_API_KEY = os.getenv('LINGO_DEV_API_KEY')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
