@@ -1,32 +1,32 @@
-# AgreeWise 📄
+# AgreeWise
 
 > Your AI-powered contract analyzer that helps you understand legal documents in any language
 
 AgreeWise is an intelligent contract analysis tool that uses AI to break down complex legal documents into simple, understandable terms. Upload your contract, and get instant analysis with risk assessment, obligations, rights, and key terms - all available in multiple languages.
 
-## 🎥 Demo Video
+## Demo Video
 
 [![Watch Demo Video](https://img.shields.io/badge/▶-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/dXDQltCSCTQ)
 
-## ✨ Features
+## Features
 
-- **📤 Document Upload**: Support for PDF and DOCX files (including scanned documents with OCR)
-- **🤖 AI-Powered Analysis**: Intelligent contract analysis using Groq AI
-- **⚠️ Risk Assessment**: Color-coded risk levels (Red, Yellow, Green) with detailed explanations
-- **📋 Comprehensive Breakdown**:
+- **Document Upload**: Support for PDF and DOCX files (including scanned documents with OCR)
+- **AI-Powered Analysis**: Intelligent contract analysis using Groq AI
+- **Risk Assessment**: Color-coded risk levels (Red, Yellow, Green) with detailed explanations
+- **Comprehensive Breakdown**:
   - Your obligations and responsibilities
   - Your rights and benefits
   - Potential risks and red flags
   - Key clauses and their impact
   - Important questions to ask before signing
-- **🌍 Multi-Language Support**:
+- **Multi-Language Support**:
   - UI available in English, Hindi, Spanish, French, German, Portuguese, Italian, Russian, Japanese, and Chinese
   - Analysis translation in 50+ languages powered by Lingo.dev
-- **🔊 Text-to-Speech**: Listen to contract summaries in your preferred language
-- **📱 Responsive Design**: Works seamlessly on desktop and mobile devices
-- **💾 Local Processing**: No data stored on servers - your contracts remain private
+- **Text-to-Speech**: Listen to contract summaries in your preferred language
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Local Processing**: No data stored on servers - your contracts remain private
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 19** - UI framework
@@ -46,7 +46,7 @@ AgreeWise is an intelligent contract analysis tool that uses AI to break down co
 - **EasyOCR** - Optical character recognition for scanned documents
 - **python-docx** - DOCX file processing
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -66,7 +66,7 @@ You'll need to obtain the following API keys:
    - Sign up at [Lingo.dev](https://lingo.dev/)
    - Get your API key from the dashboard
 
-## 🚀 Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -78,11 +78,13 @@ cd agreewise
 ### 2. Backend Setup
 
 #### 2.1 Navigate to Backend Directory
+
 ```bash
 cd backend
 ```
 
 #### 2.2 Create Python Virtual Environment
+
 ```bash
 # On Windows
 python -m venv venv
@@ -94,11 +96,13 @@ source venv/bin/activate
 ```
 
 #### 2.3 Install Python Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 #### 2.4 Create Environment File
+
 Create a `.env` file in the `backend` directory:
 
 ```bash
@@ -119,11 +123,12 @@ FLASK_ENV=development
 FLASK_DEBUG=True
 ```
 
-⚠️ **Important**: Replace `your_groq_api_key_here` and `your_lingo_dev_api_key_here` with your actual API keys.
+**Important**: Replace `your_groq_api_key_here` and `your_lingo_dev_api_key_here` with your actual API keys.
 
 #### 2.5 Additional Dependencies (for OCR)
 
 **For macOS/Linux:**
+
 ```bash
 # Install Tesseract OCR (required by EasyOCR)
 # macOS
@@ -140,11 +145,13 @@ sudo apt-get install tesseract-ocr
 ### 3. Frontend Setup
 
 #### 3.1 Navigate to Frontend Directory
+
 ```bash
 cd ../frontend
 ```
 
 #### 3.2 Install Node Dependencies
+
 ```bash
 npm install
 # or
@@ -152,6 +159,7 @@ yarn install
 ```
 
 #### 3.3 Create Environment File
+
 Create a `.env` file in the `frontend` directory:
 
 ```bash
@@ -164,7 +172,7 @@ Add the following content to `frontend/.env`:
 VITE_BACKEND_URL=http://localhost:5001
 ```
 
-## 🎯 Running the Application
+## Running the Application
 
 You need to run both the backend and frontend servers simultaneously.
 
@@ -189,14 +197,14 @@ yarn dev
 
 The frontend will start on `http://localhost:5173`
 
-### 🎉 Access the Application
+### Access the Application
 
 Open your browser and navigate to:
 ```
 http://localhost:5173
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 agreewise/
@@ -208,29 +216,29 @@ agreewise/
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/       # React components
+│   │   ├── components/        # React components
 │   │   │   ├── LanguageSelector.jsx
 │   │   │   └── FileUpload.jsx
-│   │   ├── contexts/         # React contexts
+│   │   ├── contexts/          # React contexts
 │   │   │   └── UILanguageContext.jsx
-│   │   ├── pages/            # Page components
+│   │   ├── pages/             # Page components
 │   │   │   ├── HomePage.jsx
 │   │   │   ├── AnalyzePage.jsx
 │   │   │   └── HowToUsePage.jsx
-│   │   ├── App.jsx           # Main App component
-│   │   └── main.jsx          # Entry point
-│   ├── public/               # Static assets
-│   ├── package.json          # Node dependencies
-│   ├── vite.config.js        # Vite configuration
-│   ├── tailwind.config.js    # Tailwind CSS configuration
-│   └── .env                  # Environment variables (not in git)
+│   │   ├── App.jsx            # Main App component
+│   │   └── main.jsx           # Entry point
+│   ├── public/                # Static assets
+│   ├── package.json           # Node dependencies
+│   ├── vite.config.js         # Vite configuration
+│   ├── tailwind.config.js     # Tailwind CSS configuration
+│   └── .env                   # Environment variables (not in git)
 │
-├── test_agreements/          # Sample contracts for testing
+├── test_agreements/           # Sample contracts for testing
 ├── .gitignore
 └── README.md
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Document Analysis
 - **POST** `/api/analyze`
@@ -256,11 +264,12 @@ agreewise/
   - Body: `{ question, document_type, language }`
   - Response: Formatted message for WhatsApp/Email
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Backend Issues
 
 **Issue: ModuleNotFoundError**
+
 ```bash
 # Solution: Make sure virtual environment is activated
 source venv/bin/activate  # macOS/Linux
@@ -271,6 +280,7 @@ pip install -r requirements.txt
 ```
 
 **Issue: API Key Errors**
+
 ```bash
 # Solution: Check your .env file
 # Make sure API keys are correct and have no extra spaces
@@ -278,6 +288,7 @@ pip install -r requirements.txt
 ```
 
 **Issue: OCR Not Working**
+
 ```bash
 # Solution: Install Tesseract OCR
 # macOS
@@ -290,6 +301,7 @@ sudo apt-get install tesseract-ocr
 ```
 
 **Issue: Port 5001 Already in Use**
+
 ```bash
 # Solution: Kill the process using port 5001
 # macOS/Linux
@@ -306,6 +318,7 @@ taskkill /PID <PID> /F
 ### Frontend Issues
 
 **Issue: Module Not Found**
+
 ```bash
 # Solution: Reinstall node_modules
 rm -rf node_modules package-lock.json
@@ -313,12 +326,14 @@ npm install
 ```
 
 **Issue: CORS Errors**
+
 ```bash
 # Solution: Make sure backend is running on http://localhost:5001
 # Check VITE_BACKEND_URL in frontend/.env
 ```
 
 **Issue: Port 5173 Already in Use**
+
 ```bash
 # Solution: Kill the process or use a different port
 npm run dev -- --port 5174
@@ -341,7 +356,7 @@ npm run dev -- --port 5174
 - Ensure file format is PDF or DOCX
 - Try a different browser if issues persist
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how you can help:
 
@@ -352,24 +367,23 @@ We welcome contributions! Here's how you can help:
 5. Open a Pull Request
 
 ### Development Guidelines
-
 - Follow existing code style
 - Add comments for complex logic
 - Test your changes thoroughly
 - Update documentation if needed
 
-## 🔒 Privacy & Security
+## Privacy & Security
 
 - **No Data Storage**: Documents are processed in memory and not stored
 - **Secure Processing**: Files are deleted after analysis
 - **API Security**: API keys are stored in environment variables
 - **CORS Protection**: Backend configured with proper CORS policies
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Groq](https://groq.com/) - Fast AI inference
 - [Lingo.dev](https://lingo.dev/) - Translation services
@@ -377,17 +391,16 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [EasyOCR](https://github.com/JaidedAI/EasyOCR) - OCR for scanned documents
 - [pdfplumber](https://github.com/jsvine/pdfplumber) - PDF text extraction
 
-## 📧 Support
+## Support
 
 If you have any questions or run into issues:
 
-1. Check the [Troubleshooting](#-troubleshooting) section
+1. Check the [Troubleshooting](#troubleshooting) section
 2. Search existing [GitHub Issues](https://github.com/yourusername/agreewise/issues)
 3. Open a new issue with detailed information about your problem
 
-
 ---
 
-Made with ❤️ by SHETTYKSIDDHARTH
+Made with ❤ by SHETTYKSIDDHARTH
 
-**⭐ If you find this project helpful, please give it a star!**
+If you find this project helpful, please give it a star!
