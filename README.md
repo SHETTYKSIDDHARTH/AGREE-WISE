@@ -4,6 +4,10 @@
 
 AgreeWise is an intelligent contract analysis tool that uses AI to break down complex legal documents into simple, understandable terms. Upload your contract, and get instant analysis with risk assessment, obligations, rights, and key terms - all available in multiple languages.
 
+## 🎥 Demo Video
+
+[![Watch Demo Video](https://img.shields.io/badge/▶-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/dXDQltCSCTQ)
+
 ## ✨ Features
 
 - **📤 Document Upload**: Support for PDF and DOCX files (including scanned documents with OCR)
